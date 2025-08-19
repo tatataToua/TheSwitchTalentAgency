@@ -1,7 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Users, Plus, Music, Clock, MapPin, Trash2, Edit3 } from 'lucide-react';
-
-const API_BASE_URL = 'http://localhost:5000/api';
 
 const DJAgencyApp = () => {
   const [schedules, setSchedules] = useState([]);
@@ -20,46 +17,19 @@ const DJAgencyApp = () => {
     dj: ''
   });
 
-  // Fetch data from API
-  const fetchDJs = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/djs`);
-      const data = await response.json();
-      if (data.success) {
-        setDjs(data.djs);
-      }
-    } catch (error) {
-      showMessage('Error fetching DJs', 'error');
-    }
-  };
+  // Mock data for demo purposes
+  const mockDJs = ['DJ Alex', 'DJ Sarah', 'DJ Mike', 'DJ Lisa'];
+  const mockSchedules = [
+    { id: 1, date: '2025-08-20', time: '20:00', location: 'Wedding Hall A', dj: 'DJ Alex' },
+    { id: 2, date: '2025-08-22', time: '19:30', location: 'Corporate Event Center', dj: 'DJ Sarah' },
+    { id: 3, date: '2025-08-25', time: '21:00', location: 'Birthday Party Venue', dj: 'DJ Mike' }
+  ];
 
-  const fetchSchedules = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/schedules`);
-      const data = await response.json();
-      if (data.success) {
-        setSchedules(data.schedules);
-      }
-    } catch (error) {
-      showMessage('Error fetching schedules', 'error');
-    }
-    setLoading(false);
-  };
-
-  const fetchDJSchedules = async (djName) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/dj-schedules/${encodeURIComponent(djName)}`);
-      const data = await response.json();
-      if (data.success) {
-        setSchedules(data.schedules);
-      }
-    } catch (error) {
-      showMessage('Error fetching DJ schedules', 'error');
-    }
-    setLoading(false);
-  };
+  // Initialize with mock data
+  useEffect(() => {
+    setDjs(mockDJs);
+    setSchedules(mockSchedules);
+  }, []);
 
   // Show message to user
   const showMessage = (text, type = 'success') => {
@@ -72,7 +42,7 @@ const DJAgencyApp = () => {
   };
 
   // Handle form submission
-  const handleAddSchedule = async () => {
+  const handleAddSchedule = () => {
     // Basic validation
     if (!formData.date || !formData.time || !formData.location || !formData.dj) {
       showMessage('Please fill in all fields', 'error');
@@ -81,51 +51,29 @@ const DJAgencyApp = () => {
 
     setLoading(true);
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/schedules`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        showMessage('Schedule added successfully!', 'success');
-        setFormData({ date: '', time: '', location: '', dj: '' });
-        fetchSchedules();
-        setCurrentView('master-calendar');
-      } else {
-        showMessage(data.error || 'Error adding schedule', 'error');
-      }
-    } catch (error) {
-      showMessage('Error adding schedule', 'error');
-    }
-    setLoading(false);
+    // Simulate API call
+    setTimeout(() => {
+      const newSchedule = {
+        id: schedules.length + 1,
+        ...formData
+      };
+      
+      setSchedules([...schedules, newSchedule]);
+      showMessage('Schedule added successfully!', 'success');
+      setFormData({ date: '', time: '', location: '', dj: '' });
+      setCurrentView('master-calendar');
+      setLoading(false);
+    }, 1000);
   };
 
   // Handle delete schedule
-  const handleDeleteSchedule = async (scheduleId) => {
+  const handleDeleteSchedule = (scheduleId) => {
     if (!window.confirm('Are you sure you want to delete this schedule?')) {
       return;
     }
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/schedules/${scheduleId}`, {
-        method: 'DELETE',
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        showMessage('Schedule deleted successfully!', 'success');
-        fetchSchedules();
-      } else {
-        showMessage(data.error || 'Error deleting schedule', 'error');
-      }
-    } catch (error) {
-      showMessage('Error deleting schedule', 'error');
-    }
+    setSchedules(schedules.filter(schedule => schedule.id !== scheduleId));
+    showMessage('Schedule deleted successfully!', 'success');
   };
 
   // Handle form input changes
@@ -140,17 +88,14 @@ const DJAgencyApp = () => {
   const handleViewDJCalendar = (djName) => {
     setSelectedDj(djName);
     setCurrentView('dj-calendar');
-    fetchDJSchedules(djName);
   };
-
-  // Initialize data
-  useEffect(() => {
-    fetchDJs();
-    fetchSchedules();
-  }, []);
 
   // Sort schedules by date
   const sortedSchedules = [...schedules].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  // Filter schedules for specific DJ
+  const djSchedules = selectedDj ? schedules.filter(schedule => schedule.dj === selectedDj) : [];
+  const sortedDjSchedules = [...djSchedules].sort((a, b) => new Date(a.date) - new Date(b.date));
 
   // Render message
   const renderMessage = () => {
@@ -166,12 +111,26 @@ const DJAgencyApp = () => {
     );
   };
 
+  // Simple icon components
+  const Icon = ({ name, className = "w-6 h-6" }) => {
+    const icons = {
+      music: "🎵",
+      calendar: "📅", 
+      users: "👥",
+      plus: "➕",
+      clock: "🕐",
+      location: "📍",
+      trash: "🗑️"
+    };
+    return <span className={`inline-block ${className}`}>{icons[name] || "📄"}</span>;
+  };
+
   // Render navigation
   const renderNavigation = () => (
     <nav className="bg-blue-600 text-white p-4 mb-6">
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <Music className="w-8 h-8" />
+          <Icon name="music" className="w-8 h-8" />
           <h1 className="text-2xl font-bold">DJ Agency</h1>
         </div>
         <div className="flex space-x-4">
@@ -182,7 +141,7 @@ const DJAgencyApp = () => {
             Home
           </button>
           <button
-            onClick={() => { setCurrentView('master-calendar'); fetchSchedules(); }}
+            onClick={() => setCurrentView('master-calendar')}
             className={`px-4 py-2 rounded ${currentView === 'master-calendar' ? 'bg-blue-800' : 'hover:bg-blue-700'}`}
           >
             Master Calendar
@@ -207,17 +166,17 @@ const DJAgencyApp = () => {
           <p className="text-xl mb-4">Professional DJ services for all your events</p>
           <p className="mb-6">Manage schedules, view calendars, and coordinate your DJ team all in one place.</p>
           <button
-            onClick={() => { setCurrentView('master-calendar'); fetchSchedules(); }}
+            onClick={() => setCurrentView('master-calendar')}
             className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
           >
-            <Calendar className="w-5 h-5 inline mr-2" />
+            <Icon name="calendar" className="w-5 h-5 inline mr-2" />
             View Master Calendar
           </button>
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h3 className="text-2xl font-bold mb-4 flex items-center">
-            <Users className="w-6 h-6 mr-2" />
+            <Icon name="users" className="w-6 h-6 mr-2" />
             Our DJs
           </h3>
           <div className="space-y-3">
@@ -238,7 +197,7 @@ const DJAgencyApp = () => {
 
       <div className="grid md:grid-cols-3 gap-6 mt-8">
         <div className="bg-white rounded-lg shadow-lg p-6 text-center">
-          <Plus className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+          <Icon name="plus" className="w-12 h-12 text-blue-600 mx-auto mb-4" />
           <h3 className="text-xl font-bold mb-2">Add Schedules</h3>
           <p className="text-gray-600 mb-4">Schedule your DJs for upcoming events</p>
           <button
@@ -250,11 +209,11 @@ const DJAgencyApp = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6 text-center">
-          <Calendar className="w-12 h-12 text-green-600 mx-auto mb-4" />
+          <Icon name="calendar" className="w-12 h-12 text-green-600 mx-auto mb-4" />
           <h3 className="text-xl font-bold mb-2">Master Calendar</h3>
           <p className="text-gray-600 mb-4">View all scheduled events in one place</p>
           <button
-            onClick={() => { setCurrentView('master-calendar'); fetchSchedules(); }}
+            onClick={() => setCurrentView('master-calendar')}
             className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition-colors"
           >
             View Calendar
@@ -262,7 +221,7 @@ const DJAgencyApp = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6 text-center">
-          <Users className="w-12 h-12 text-purple-600 mx-auto mb-4" />
+          <Icon name="users" className="w-12 h-12 text-purple-600 mx-auto mb-4" />
           <h3 className="text-xl font-bold mb-2">DJ Calendars</h3>
           <p className="text-gray-600 mb-4">Individual schedules for each DJ</p>
           <select
@@ -293,21 +252,21 @@ const DJAgencyApp = () => {
             className="text-red-600 hover:text-red-800 p-2"
             title="Delete schedule"
           >
-            <Trash2 className="w-5 h-5" />
+            <Icon name="trash" className="w-5 h-5" />
           </button>
         )}
       </div>
       <div className="space-y-2">
         <div className="flex items-center text-gray-600">
-          <Users className="w-4 h-4 mr-2" />
+          <Icon name="users" className="w-4 h-4 mr-2" />
           <span className="font-medium">{schedule.dj}</span>
         </div>
         <div className="flex items-center text-gray-600">
-          <Clock className="w-4 h-4 mr-2" />
+          <Icon name="clock" className="w-4 h-4 mr-2" />
           <span>{schedule.time}</span>
         </div>
         <div className="flex items-center text-gray-600">
-          <MapPin className="w-4 h-4 mr-2" />
+          <Icon name="location" className="w-4 h-4 mr-2" />
           <span>{schedule.location}</span>
         </div>
       </div>
@@ -323,7 +282,7 @@ const DJAgencyApp = () => {
           onClick={() => setCurrentView('add-schedule')}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors flex items-center"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Icon name="plus" className="w-4 h-4 mr-2" />
           Add Schedule
         </button>
       </div>
@@ -339,14 +298,14 @@ const DJAgencyApp = () => {
         </div>
       ) : (
         <div className="text-center py-12">
-          <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <Icon name="calendar" className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-gray-600 mb-2">No schedules yet</h3>
           <p className="text-gray-500 mb-4">Start by adding your first schedule.</p>
           <button
             onClick={() => setCurrentView('add-schedule')}
             className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 transition-colors"
           >
-            <Plus className="w-4 h-4 inline mr-2" />
+            <Icon name="plus" className="w-4 h-4 inline mr-2" />
             Add First Schedule
           </button>
         </div>
@@ -359,7 +318,7 @@ const DJAgencyApp = () => {
     <div className="container mx-auto px-4">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold">
-          <Users className="inline w-8 h-8 mr-2" />
+          <Icon name="users" className="inline w-8 h-8 mr-2" />
           {selectedDj} Calendar
         </h2>
         <button
@@ -375,20 +334,20 @@ const DJAgencyApp = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading schedules...</p>
         </div>
-      ) : sortedSchedules.length > 0 ? (
+      ) : sortedDjSchedules.length > 0 ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sortedSchedules.map((schedule) => renderScheduleCard(schedule, false))}
+          {sortedDjSchedules.map((schedule) => renderScheduleCard(schedule, false))}
         </div>
       ) : (
         <div className="text-center py-12">
-          <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <Icon name="calendar" className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-gray-600 mb-2">No schedules for {selectedDj}</h3>
           <p className="text-gray-500 mb-4">This DJ doesn't have any scheduled events yet.</p>
           <button
             onClick={() => setCurrentView('add-schedule')}
             className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 transition-colors"
           >
-            <Plus className="w-4 h-4 inline mr-2" />
+            <Icon name="plus" className="w-4 h-4 inline mr-2" />
             Add Schedule
           </button>
         </div>
@@ -401,7 +360,7 @@ const DJAgencyApp = () => {
     <div className="container mx-auto px-4 max-w-lg">
       <div className="bg-white rounded-lg shadow-lg p-8">
         <h2 className="text-2xl font-bold mb-6 flex items-center">
-          <Plus className="w-6 h-6 mr-2" />
+          <Icon name="plus" className="w-6 h-6 mr-2" />
           Add New Schedule
         </h2>
         
