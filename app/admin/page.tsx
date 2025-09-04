@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import Link from "next/link"
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -247,21 +247,47 @@ export default function AdminDashboard() {
     e.preventDefault()
     try {
       const djData = {
-        ...djFormData,
-        genres: djFormData.genres.split(",").map((g) => g.trim()),
-        booking_rate: Number.parseInt(djFormData.booking_rate),
-        residencies: djFormData.residencies
+        name: djFormData.name,
+        stage_name: djFormData.stage_name,
+        slug: djFormData.slug,
+        bio: djFormData.bio,
+        genres: djFormData.genres
           .split(",")
-          .map((r) => r.trim())
-          .filter((r) => r),
+          .map((g) => g.trim())
+          .filter((g) => g),
+        booking_rate: djFormData.booking_rate ? Number.parseInt(djFormData.booking_rate) : null,
+        location: djFormData.location,
+        equipment: djFormData.equipment
+          ? djFormData.equipment
+              .split(",")
+              .map((e) => e.trim())
+              .filter((e) => e)
+          : [],
+        residencies: djFormData.residencies
+          ? djFormData.residencies
+              .split(",")
+              .map((r) => r.trim())
+              .filter((r) => r)
+          : [],
         social_media: {
-          instagram: djFormData.social_instagram,
-          soundcloud: djFormData.social_soundcloud,
-          spotify: djFormData.social_spotify,
+          instagram: djFormData.social_instagram || null,
+          soundcloud: djFormData.social_soundcloud || null,
+          spotify: djFormData.social_spotify || null,
         },
+        experience: djFormData.experience ? Number.parseInt(djFormData.experience) : 0,
       }
 
-      await supabase.from("djs").insert([djData])
+      console.log("[v0] Adding DJ with data:", djData)
+
+      const { data, error } = await supabase.from("djs").insert([djData])
+
+      if (error) {
+        console.error("[v0] Supabase error:", error)
+        alert(`Error adding DJ: ${error.message}`)
+        return
+      }
+
+      console.log("[v0] DJ added successfully:", data)
       setShowDJForm(false)
       setDJFormData({
         name: "",
@@ -282,7 +308,7 @@ export default function AdminDashboard() {
       })
       loadData()
     } catch (error) {
-      console.error("Error adding DJ:", error)
+      console.error("[v0] Error adding DJ:", error)
       alert("Error adding DJ")
     }
   }
@@ -291,13 +317,38 @@ export default function AdminDashboard() {
     e.preventDefault()
     try {
       const venueData = {
-        ...venueFormData,
-        capacity: Number.parseInt(venueFormData.capacity),
-        amenities: venueFormData.amenities.split(",").map((a) => a.trim()),
-        preferred_genres: venueFormData.preferred_genres.split(",").map((g) => g.trim()),
+        name: venueFormData.name,
+        location: venueFormData.location,
+        city: venueFormData.city,
+        capacity: venueFormData.capacity ? Number.parseInt(venueFormData.capacity) : null,
+        contact_email: venueFormData.contact_email,
+        contact_phone: venueFormData.contact_phone,
+        description: venueFormData.description,
+        amenities: venueFormData.amenities
+          ? venueFormData.amenities
+              .split(",")
+              .map((a) => a.trim())
+              .filter((a) => a)
+          : [],
+        preferred_genres: venueFormData.preferred_genres
+          ? venueFormData.preferred_genres
+              .split(",")
+              .map((g) => g.trim())
+              .filter((g) => g)
+          : [],
       }
 
-      await supabase.from("venues").insert([venueData])
+      console.log("[v0] Adding venue with data:", venueData)
+
+      const { data, error } = await supabase.from("venues").insert([venueData])
+
+      if (error) {
+        console.error("[v0] Supabase error:", error)
+        alert(`Error adding venue: ${error.message}`)
+        return
+      }
+
+      console.log("[v0] Venue added successfully:", data)
       setShowVenueForm(false)
       setVenueFormData({
         name: "",
@@ -312,7 +363,7 @@ export default function AdminDashboard() {
       })
       loadData()
     } catch (error) {
-      console.error("Error adding venue:", error)
+      console.error("[v0] Error adding venue:", error)
       alert("Error adding venue")
     }
   }
@@ -321,12 +372,26 @@ export default function AdminDashboard() {
     e.preventDefault()
     try {
       const bookingData = {
-        ...bookingFormData,
-        rate: Number.parseInt(bookingFormData.rate),
+        dj_id: bookingFormData.dj_id,
+        venue_id: bookingFormData.venue_id,
+        event_date: bookingFormData.event_date,
+        event_time: bookingFormData.event_time,
+        rate: bookingFormData.rate ? Number.parseInt(bookingFormData.rate) : null,
+        notes: bookingFormData.notes,
         status: "confirmed",
       }
 
-      await supabase.from("bookings").insert([bookingData])
+      console.log("[v0] Adding booking with data:", bookingData)
+
+      const { data, error } = await supabase.from("bookings").insert([bookingData])
+
+      if (error) {
+        console.error("[v0] Supabase error:", error)
+        alert(`Error adding booking: ${error.message}`)
+        return
+      }
+
+      console.log("[v0] Booking added successfully:", data)
       setShowBookingForm(false)
       setBookingFormData({
         dj_id: "",
@@ -338,7 +403,7 @@ export default function AdminDashboard() {
       })
       loadData()
     } catch (error) {
-      console.error("Error adding booking:", error)
+      console.error("[v0] Error adding booking:", error)
       alert("Error adding booking")
     }
   }
@@ -349,6 +414,12 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-orange-900">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <Link href="/" className="flex items-center gap-2 text-orange-200 hover:text-white transition-colors">
+              <ArrowLeftRight className="w-4 h-4 rotate-180" />
+              Back to Website
+            </Link>
+          </div>
           <h1 className="text-4xl font-bold text-white mb-2">Admin Dashboard</h1>
           <p className="text-orange-200">Manage your talent agency data</p>
         </div>
@@ -585,24 +656,24 @@ export default function AdminDashboard() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="phone">Phone</Label>
+                        <Label htmlFor="experience">Experience (years)</Label>
                         <Input
-                          id="phone"
-                          value={djFormData.phone}
-                          onChange={(e) => setDJFormData({ ...djFormData, phone: e.target.value })}
+                          id="experience"
+                          type="number"
+                          value={djFormData.experience}
+                          onChange={(e) => setDJFormData({ ...djFormData, experience: e.target.value })}
                           className="bg-white/10 border-orange-500/20"
                         />
                       </div>
                     </div>
                     <div>
-                      <Label htmlFor="email">Email</Label>
+                      <Label htmlFor="equipment">Equipment (comma-separated)</Label>
                       <Input
-                        id="email"
-                        type="email"
-                        value={djFormData.email}
-                        onChange={(e) => setDJFormData({ ...djFormData, email: e.target.value })}
+                        id="equipment"
+                        value={djFormData.equipment}
+                        onChange={(e) => setDJFormData({ ...djFormData, equipment: e.target.value })}
                         className="bg-white/10 border-orange-500/20"
-                        required
+                        placeholder="CDJs, Mixer, Speakers"
                       />
                     </div>
                     <div className="grid grid-cols-3 gap-4">
